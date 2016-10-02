@@ -1,4 +1,6 @@
 import requests
+import time
+import sys
 
 # scan ADMIN_ID to switch between checkin and checkout station
 ADMIN_ID = 123
@@ -69,8 +71,18 @@ def send_request(in_out, userID, items):
 
     # check response (get data from database)
     if r.status_code == 200:
+        print "\nRESULT:"
         for key, value in r.json().items():
             print "%s: %r" % (key, value)
+
+        # wait x seconds until asking for new user ID
+        print "\nContinue... ",
+        sys.stdout.flush()  # must flush output because no newline
+        continue_delay = 3 # seconds
+        for s in xrange(continue_delay):
+            print "%d... " % (continue_delay - s),
+            sys.stdout.flush() # must flush output because no newline
+            time.sleep(1)
 
     else:
         print "ERROR: %d" % r.status_code
