@@ -53,6 +53,11 @@ def scan_items():
     itemID = raw_input("> ")
     while itemID != "done":
         #TODO: verify that item has not already been scanned
+        try:
+            print "Checked %s" % ITEMS[int(itemID)]["name"]
+        except KeyError:
+            print "Invalid ID: %r" % itemID
+            print "Valid keys: %r" % ITEMS.keys()
         items.append(itemID)
         itemID = raw_input("> ")
 
@@ -87,6 +92,17 @@ def send_request(in_out, userID, items):
     else:
         print "ERROR: %d" % r.status_code
 
+def restructure_items(item_list):
+    """
+    PURPOSE: take in an item list and convert it to a dict with tag_id being the key
+    PARAMETERS: item_list: a list of items returned from the database
+    RETURNS: a dict with the tag_id as the key
+    """
+    item_dict = {}
+    for item in item_list:
+        item_dict[item["tag_id"]] = item
+    return item_dict
+
 def main():
     """
     PURPOSE: loop kiosk progam endlessly
@@ -106,4 +122,12 @@ def main():
             send_request(in_out, userID, items)
 
 if __name__ == "__main__":
-    main()
+    # get all items
+    r = requests.get("http://api.checkmeout.dev/item")
+    # check response (get data from database)
+    if r.status_code == 200:
+        ITEMS = restructure_items(r.json()["data"])
+        main()
+    else:
+        print "Error getting items from DB, exiting now..."
+
