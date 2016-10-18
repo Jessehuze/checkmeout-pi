@@ -2,6 +2,9 @@
 PURPOSE: accept input from an external RFID reader and communicate the scanned items with
          the database in order to check items in and out. This code is meant to run on a
          rasberry pi with connected RFID reader.
+	
+	 Programmers: Trevor Ross, Dalton Lobosky, Jason Beard
+
 """
 import sys
 import time
