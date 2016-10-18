@@ -1,6 +1,11 @@
-import requests
-import time
+"""
+PURPOSE: accept input from an external RFID reader and communicate the scanned items with
+         the database in order to check items in and out. This code is meant to run on a
+         rasberry pi with connected RFID reader.
+"""
 import sys
+import time
+import requests
 
 # scan ADMIN_ID to switch between checkin and checkout station
 ADMIN_ID = 123
@@ -59,26 +64,27 @@ def scan_items(items, reservations, in_out):
         # loop until user is done
         if tag_id == "done":
             break
-        # insure tag_id is a valid tag_id
+        # ensure tag_id is an integer
         try:
             tag_id = int(tag_id)
         except ValueError:
             print "tag ID: %r is of an invalid format, must be integer. Enter 'done' to finish" % tag_id
             continue
+        # ensure tag_id is a valid tag_id
         if tag_id not in items.keys():
             print "Invalid tag ID: %r" % tag_id
             print "Valid tag IDs: %r" % items.keys()
             continue
-        # insure item has not already been checked in this cycle
+        # ensure item has not already been checked in this cycle
         if tag_id in scanned_items:
             print "Item '%s' has already been scanned" % items[tag_id]["name"]
             continue
-        # insure item is available to check in
+        # ensure item is available to check in
         if in_out == "in":
             if tag_id not in reservations.keys():
                 print "Item '%s' could not be checked in because it is not currently checked out" % items[tag_id]["name"]
                 continue
-        # insure item is available to check out
+        # ensure item is available to check out
         elif in_out == "out":
             if tag_id in reservations.keys():
                 print "Item '%s' could not be checked out because it is not currently checked in" % items[tag_id]["name"]
@@ -92,16 +98,16 @@ def scan_items(items, reservations, in_out):
 
     return scanned_items
 
-def send_request(in_out, userID, items):
+def send_request(in_out, user_id, items):
     """
     PURPOSE: sends get request to server, checking items either in or out
     PARAMETERS: in_out: string, "in" or "out"
-                userID: int, user ID
+                user_id: int, user ID
                 items: list of strings, each string is an item ID
     """
     # get request (sends data to database)
     req_str = "http://api.checkmeout.dev/check%s?SID=%d&UID=%d&items=[%s]"
-    response = requests.get(req_str % (in_out, STORE_ID, userID, ",".join(map(lambda x: str(x), items))))
+    response = requests.get(req_str % (in_out, STORE_ID, user_id, ",".join(map(str, items))))
 
     # check response (get data from database)
     if response.status_code == 200:
@@ -111,7 +117,7 @@ def send_request(in_out, userID, items):
     else:
         print "ERROR: %d" % response.status_code
 
-def get_items_from_DB():
+def get_items_from_db():
     """
     PURPOSE: query the database for all the items and return them as a dict
     RETURNS: a dict with the tag_id as the key
@@ -128,8 +134,7 @@ def get_items_from_DB():
 
     return item_dict
 
-
-def get_reservations_from_DB(items):
+def get_reservations_from_db(items):
     """
     PURPOSE: query the database for all the reservations and return them as a dict
     RETURNS: a dict with the tag_id as the key
@@ -145,6 +150,7 @@ def get_reservations_from_DB(items):
                 continue
             else:
                 # find the tag_id coorisponding to the item_id of the reservation
+                tag_id = None
                 for tag_id in items:
                     if items[tag_id]["id"] == reservation["item_id"]:
                         break
@@ -160,8 +166,8 @@ def main():
     """
     PURPOSE: loop kiosk progam endlessly
     """
-    items = get_items_from_DB()
-    reservations = get_reservations_from_DB(items)
+    items = get_items_from_db()
+    reservations = get_reservations_from_db(items)
 
     while True: # endless loop
         # set kiosk function (checkin or checkout)
@@ -169,16 +175,16 @@ def main():
 
         while True:
             kiosk_display(in_out)
-            userID = int(raw_input("Scan ID card to begin: "))
-            # TODO: validate userID
+            user_id = int(raw_input("Scan ID card to begin: "))
+            # TODO: validate user_id
             # return to kiosk type menu if Admin ID is entered
-            if userID == ADMIN_ID:
+            if user_id == ADMIN_ID:
                 break
             # scan items and send them to the database
             scanned_items = scan_items(items, reservations, in_out)
             if scanned_items:
-                send_request(in_out, userID, scanned_items)
-                reservations = get_reservations_from_DB(items)
+                send_request(in_out, user_id, scanned_items)
+                reservations = get_reservations_from_db(items)
             else:
                 print "No items to check %s" % in_out
 
@@ -186,11 +192,10 @@ def main():
             print "\nContinue... ",
             sys.stdout.flush()  # must flush output because no newline
             continue_delay = 3 # seconds
-            for s in xrange(continue_delay):
-                print "%d... " % (continue_delay - s),
+            for sec in xrange(continue_delay):
+                print "%d... " % (continue_delay - sec),
                 sys.stdout.flush() # must flush output because no newline
                 time.sleep(1)
 
 if __name__ == "__main__":
     main()
-
