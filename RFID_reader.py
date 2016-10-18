@@ -43,25 +43,54 @@ def kiosk_display(in_out):
     print "#"*80
     print
 
-def scan_items():
+def scan_items(items, reservations, in_out):
     """
     PURPOSE: Scan items from keyboard input
-    RETURNS: list of item numbers (formated as strings)
+    PARAMETERS: items: dict of items in database
+                reservations: dict of reservations in database
+                in_out: string, "in" or "out"
+    RETURNS: list of item numbers (formated as integers)
     """
-    print "Scan items, type 'done' to quit"
-    items = []
-    itemID = raw_input("> ")
-    while itemID != "done":
-        #TODO: verify that item has not already been scanned
-        try:
-            print "Checked %s" % ITEMS[int(itemID)]["name"]
-        except KeyError:
-            print "Invalid ID: %r" % itemID
-            print "Valid keys: %r" % ITEMS.keys()
-        items.append(itemID)
-        itemID = raw_input("> ")
+    print "Scan items, type 'done' to finish"
+    scanned_items = []
 
-    return items
+    while True:
+        tag_id = raw_input("> ")
+        # loop until user is done
+        if tag_id == "done":
+            break
+        # insure tag_id is a valid tag_id
+        try:
+            tag_id = int(tag_id)
+        except ValueError:
+            print "tag ID: %r is of an invalid format, must be integer. Enter 'done' to finish" % tag_id
+            continue
+        if tag_id not in items.keys():
+            print "Invalid tag ID: %r" % tag_id
+            print "Valid tag IDs: %r" % items.keys()
+            continue
+        # insure item has not already been checked in this cycle
+        if tag_id in scanned_items:
+            print "Item '%s' has already been scanned" % items[tag_id]["name"]
+            continue
+        # insure item is available to check in
+        if in_out == "in":
+            if tag_id not in reservations.keys():
+                print "Item '%s' could not be checked in because it is not currently checked out" % items[tag_id]["name"]
+                continue
+        # insure item is available to check out
+        elif in_out == "out":
+            if tag_id in reservations.keys():
+                print "Item '%s' could not be checked out because it is not currently checked in" % items[tag_id]["name"]
+                continue
+        else:
+            raise ValueError("invalid value for in_out: %s" % in_out)
+
+        # item is availible to check in or out
+        print "Checked %s %s" % (in_out, items[tag_id]["name"])
+        scanned_items.append(tag_id)
+
+    return scanned_items
 
 def send_request(in_out, userID, items):
     """
@@ -72,41 +101,68 @@ def send_request(in_out, userID, items):
     """
     # get request (sends data to database)
     req_str = "http://api.checkmeout.dev/check%s?SID=%d&UID=%d&items=[%s]"
-    r = requests.get(req_str % (in_out, STORE_ID, userID, ",".join(items)))
+    response = requests.get(req_str % (in_out, STORE_ID, userID, ",".join(map(lambda x: str(x), items))))
 
     # check response (get data from database)
-    if r.status_code == 200:
+    if response.status_code == 200:
         print "\nRESULT:"
-        for key, value in r.json().items():
+        for key, value in response.json().items():
             print "%s: %r" % (key, value)
-
-        # wait x seconds until asking for new user ID
-        print "\nContinue... ",
-        sys.stdout.flush()  # must flush output because no newline
-        continue_delay = 3 # seconds
-        for s in xrange(continue_delay):
-            print "%d... " % (continue_delay - s),
-            sys.stdout.flush() # must flush output because no newline
-            time.sleep(1)
-
     else:
-        print "ERROR: %d" % r.status_code
+        print "ERROR: %d" % response.status_code
 
-def restructure_items(item_list):
+def get_items_from_DB():
     """
-    PURPOSE: take in an item list and convert it to a dict with tag_id being the key
-    PARAMETERS: item_list: a list of items returned from the database
+    PURPOSE: query the database for all the items and return them as a dict
     RETURNS: a dict with the tag_id as the key
     """
     item_dict = {}
-    for item in item_list:
-        item_dict[item["tag_id"]] = item
+
+    response = requests.get("http://api.checkmeout.dev/item")
+    # check response (get data from database)
+    if response.status_code == 200:
+        for item in response.json()["data"]:
+            item_dict[item["tag_id"]] = item
+    else:
+        raise ValueError("Error getting items from DB")
+
     return item_dict
+
+
+def get_reservations_from_DB(items):
+    """
+    PURPOSE: query the database for all the reservations and return them as a dict
+    RETURNS: a dict with the tag_id as the key
+    """
+    reservation_dict = {}
+
+    response = requests.get("http://api.checkmeout.dev/reservation")
+    # check response (get data from database)
+    if response.status_code == 200:
+        for reservation in response.json()["data"]:
+            if reservation["checkin_time"]:
+                # reservation is complete (checked back in), no need to store it
+                continue
+            else:
+                # find the tag_id coorisponding to the item_id of the reservation
+                for tag_id in items:
+                    if items[tag_id]["id"] == reservation["item_id"]:
+                        break
+                else:
+                    raise ValueError("item_id: %d did not match any item_id in items" % reservation["item_id"])
+                reservation_dict[tag_id] = reservation
+    else:
+        raise ValueError("Error getting reservations from DB")
+
+    return reservation_dict
 
 def main():
     """
     PURPOSE: loop kiosk progam endlessly
     """
+    items = get_items_from_DB()
+    reservations = get_reservations_from_DB(items)
+
     while True: # endless loop
         # set kiosk function (checkin or checkout)
         in_out = set_kiosk_type()
@@ -114,20 +170,27 @@ def main():
         while True:
             kiosk_display(in_out)
             userID = int(raw_input("Scan ID card to begin: "))
+            # TODO: validate userID
             # return to kiosk type menu if Admin ID is entered
             if userID == ADMIN_ID:
                 break
             # scan items and send them to the database
-            items = scan_items()
-            send_request(in_out, userID, items)
+            scanned_items = scan_items(items, reservations, in_out)
+            if scanned_items:
+                send_request(in_out, userID, scanned_items)
+                reservations = get_reservations_from_DB(items)
+            else:
+                print "No items to check %s" % in_out
+
+            # wait x seconds until asking for new user ID
+            print "\nContinue... ",
+            sys.stdout.flush()  # must flush output because no newline
+            continue_delay = 3 # seconds
+            for s in xrange(continue_delay):
+                print "%d... " % (continue_delay - s),
+                sys.stdout.flush() # must flush output because no newline
+                time.sleep(1)
 
 if __name__ == "__main__":
-    # get all items
-    r = requests.get("http://api.checkmeout.dev/item")
-    # check response (get data from database)
-    if r.status_code == 200:
-        ITEMS = restructure_items(r.json()["data"])
-        main()
-    else:
-        print "Error getting items from DB, exiting now..."
+    main()
 
