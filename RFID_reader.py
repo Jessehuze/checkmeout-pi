@@ -10,6 +10,16 @@ import requests
 # scan ADMIN_ID to switch between checkin and checkout station
 ADMIN_ID = 123
 STORE_ID = 1
+# color terminal output
+HEADER = '\033[95m'
+BLUE = '\033[94m'
+GREEN = '\033[92m'
+YELLOW = '\033[93m'
+RED = '\033[91m'
+ENDC = '\033[0m'
+BOLD = '\033[1m'
+UNDERLINE = '\033[4m'
+
 
 def set_kiosk_type():
     """
@@ -34,6 +44,7 @@ def set_kiosk_type():
 
     return in_out
 
+
 def kiosk_display(in_out):
     """
     PURPOSE: Displays the kiosk header for kiosk type (in or out)
@@ -47,6 +58,7 @@ def kiosk_display(in_out):
     print
     print "#"*80
     print
+
 
 def scan_items(items, reservations, in_out):
     """
@@ -98,6 +110,7 @@ def scan_items(items, reservations, in_out):
 
     return scanned_items
 
+
 def send_request(in_out, user_id, items):
     """
     PURPOSE: sends get request to server, checking items either in or out
@@ -105,17 +118,56 @@ def send_request(in_out, user_id, items):
                 user_id: int, user ID
                 items: list of strings, each string is an item ID
     """
+    results = {"success": [], "fail": []}
+
     # get request (sends data to database)
-    req_str = "http://api.checkmeout.dev/check%s?SID=%d&UID=%d&items=[%s]"
+    req_str = "http://api.checkmeout.us.to/kiosk/check%s?SID=%d&UID=%d&items=[%s]"
+    # req_str = "http://api.checkmeout.dev/kiosk/check%s?SID=%d&UID=%d&items=[%s]"
     response = requests.get(req_str % (in_out, STORE_ID, user_id, ",".join(map(str, items))))
 
     # check response (get data from database)
     if response.status_code == 200:
-        print "\nRESULT:"
-        for key, value in response.json().items():
-            print "%s: %r" % (key, value)
+        response = response.json()
+        # print response
+        try:
+            print "\nITEMS SUCCEEDED:"
+
+            # response differes based on checking operation
+            # TODO: ask about bug:
+            #   checking IN response: [... {'items_updated': []}, ...]
+            #   checking OUT response: [... {'items_saved': []}, ...]
+            if in_out == "in":
+                success_key = "items_updated"
+            else:
+                success_key = "items_saved"
+
+            for item in response[success_key]:
+                print item["item_name"]
+                results["success"].append(item["item_tag"])
+                # print GREEN + item["item_name"] + ENDC # pretty colors
+            print "\nITEMS FAILED:"
+            for item in response["items_failed"]:
+                if "item_name" in item.keys():
+                    # valid tag_id but invalid check operation
+                    print "%r beacuse %s" % (item["item_name"], item["reason"])
+                    results["fail"].append(item["item_tag"])
+                    # print "%s%s%s beacuse %s" % (RED, item["item_name"], ENDC, item["reason"]) # pretty colors
+                else:
+                    # invalid tag_id
+                    print "%r beacuse %s" % ("Unknown item", item["reason"])
+                    results["fail"].append(item["item_tag"])
+                    # print "%s%s%s beacuse %s" % (RED, "'Unknown item'", ENDC, item["reason"]) # pretty colors
+        except KeyError:
+            print "ENCOUNTERED ERROR PARSING RESPONSE FOR CHECK%s" % in_out
+            print response
+            exit(1)
+
+        # print "\nRESULT:"
+        # for key, value in response.json().items():
+        #     print "%s: %r" % (key, value)
     else:
         print "ERROR: %d" % response.status_code
+
 
 def get_items_from_db():
     """
@@ -124,7 +176,8 @@ def get_items_from_db():
     """
     item_dict = {}
 
-    response = requests.get("http://api.checkmeout.dev/item")
+    response = requests.get("http://api.checkmeout.us.to/kiosk/item")
+    # response = requests.get("http://api.checkmeout.dev/kiosk/item")
     # check response (get data from database)
     if response.status_code == 200:
         for item in response.json()["data"]:
@@ -134,6 +187,7 @@ def get_items_from_db():
 
     return item_dict
 
+
 def get_reservations_from_db(items):
     """
     PURPOSE: query the database for all the reservations and return them as a dict
@@ -141,7 +195,8 @@ def get_reservations_from_db(items):
     """
     reservation_dict = {}
 
-    response = requests.get("http://api.checkmeout.dev/reservation")
+    response = requests.get("http://api.checkmeout.us.to/kiosk/reservation")
+    # response = requests.get("http://api.checkmeout.dev/kiosk/reservation")
     # check response (get data from database)
     if response.status_code == 200:
         for reservation in response.json()["data"]:
@@ -162,6 +217,7 @@ def get_reservations_from_db(items):
 
     return reservation_dict
 
+
 def main():
     """
     PURPOSE: loop kiosk progam endlessly
@@ -175,8 +231,13 @@ def main():
 
         while True:
             kiosk_display(in_out)
-            user_id = int(raw_input("Scan ID card to begin: "))
-            # TODO: validate user_id
+            while True:
+                try:
+                    # TODO: validate user_id
+                    user_id = int(raw_input("Scan ID card to begin: "))
+                    break
+                except ValueError:
+                    print "please enter a valid ID"
             # return to kiosk type menu if Admin ID is entered
             if user_id == ADMIN_ID:
                 break
@@ -197,5 +258,7 @@ def main():
                 sys.stdout.flush() # must flush output because no newline
                 time.sleep(1)
 
+
 if __name__ == "__main__":
     main()
+
