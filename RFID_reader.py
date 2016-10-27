@@ -80,7 +80,8 @@ def scan_items(items, reservations, in_out):
         try:
             tag_id = int(tag_id)
         except ValueError:
-            print "tag ID: %r is of an invalid format, must be integer. Enter 'done' to finish" % tag_id
+            print "%stag ID: %r is of an invalid format, must be integer. Enter 'done' to finish" % (YELLOW, tag_id)
+            print ENDC
             continue
         # ensure tag_id is a valid tag_id
         if tag_id not in items.keys():
@@ -88,28 +89,33 @@ def scan_items(items, reservations, in_out):
                 print "ADMIN ID scanned, exiting to menu..."
                 return None
             else:
-                print "Invalid tag ID: %r" % tag_id
+                print "%sInvalid tag ID: %r" % (YELLOW, tag_id)
                 print "Valid tag IDs: %r" % items.keys()
+                print ENDC
                 continue
         # ensure item has not already been checked in this cycle
         if tag_id in scanned_items:
-            print "Item '%s' has already been scanned" % items[tag_id]["name"]
+            print "%sItem '%s' has already been scanned" % (YELLOW, items[tag_id]["name"])
+            print ENDC
             continue
         # ensure item is available to check in
         if in_out == "in":
             if tag_id not in reservations.keys():
-                print "Item '%s' is already checked in" % items[tag_id]["name"]
+                print "%sItem '%s' is already checked in" % (YELLOW, items[tag_id]["name"])
+                print ENDC
                 continue
         # ensure item is available to check out
         elif in_out == "out":
             if tag_id in reservations.keys():
-                print "Item '%s' is already checked out" % items[tag_id]["name"]
+                print "%sItem '%s' is already checked out" % (YELLOW, items[tag_id]["name"])
+                print ENDC
                 continue
         else:
             raise ValueError("invalid value for in_out: %s" % in_out)
 
         # item is availible to check in or out
-        print "Checked %s '%s'" % (in_out, items[tag_id]["name"])
+        print "%sChecked %s '%s'" % (GREEN, in_out, items[tag_id]["name"])
+        print ENDC
         scanned_items.append(tag_id)
 
     return scanned_items
@@ -146,21 +152,18 @@ def send_request(in_out, items, user_id=0):
                 success_key = "items_saved"
 
             for item in response[success_key]:
-                print item["item_name"]
                 results["success"].append(item["item_tag"])
-                # print GREEN + item["item_name"] + ENDC # pretty colors
+                print GREEN + item["item_name"] + ENDC # pretty colors
             print "\nITEMS FAILED:"
             for item in response["items_failed"]:
                 if "item_name" in item.keys():
                     # valid tag_id but invalid check operation
-                    print "%r beacuse %s" % (item["item_name"], item["reason"])
                     results["fail"].append(item["item_tag"])
-                    # print "%s%s%s beacuse %s" % (RED, item["item_name"], ENDC, item["reason"]) # pretty colors
+                    print "%s%s%s beacuse %s" % (RED, item["item_name"], ENDC, item["reason"]) # pretty colors
                 else:
                     # invalid tag_id
-                    print "%r beacuse %s" % ("Unknown item", item["reason"])
                     results["fail"].append(item["item_tag"])
-                    # print "%s%s%s beacuse %s" % (RED, "'Unknown item'", ENDC, item["reason"]) # pretty colors
+                    print "%s%s%s beacuse %s" % (RED, "'Unknown item'", ENDC, item["reason"]) # pretty colors
         except KeyError:
             print "ENCOUNTERED ERROR PARSING RESPONSE FOR CHECK%s" % in_out
             print response
