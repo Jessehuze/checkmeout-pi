@@ -8,7 +8,7 @@ import time
 import requests
 
 # scan ADMIN_ID to switch between checkin and checkout station
-ADMIN_ID = 123
+ADMIN_ID = 20219
 STORE_ID = 1
 # color terminal output
 HEADER = '\033[95m'
@@ -84,9 +84,13 @@ def scan_items(items, reservations, in_out):
             continue
         # ensure tag_id is a valid tag_id
         if tag_id not in items.keys():
-            print "Invalid tag ID: %r" % tag_id
-            print "Valid tag IDs: %r" % items.keys()
-            continue
+            if tag_id == ADMIN_ID:
+                print "ADMIN ID scanned, exiting to menu..."
+                return None
+            else:
+                print "Invalid tag ID: %r" % tag_id
+                print "Valid tag IDs: %r" % items.keys()
+                continue
         # ensure item has not already been checked in this cycle
         if tag_id in scanned_items:
             print "Item '%s' has already been scanned" % items[tag_id]["name"]
@@ -94,24 +98,24 @@ def scan_items(items, reservations, in_out):
         # ensure item is available to check in
         if in_out == "in":
             if tag_id not in reservations.keys():
-                print "Item '%s' could not be checked in because it is not currently checked out" % items[tag_id]["name"]
+                print "Item '%s' is already checked in" % items[tag_id]["name"]
                 continue
         # ensure item is available to check out
         elif in_out == "out":
             if tag_id in reservations.keys():
-                print "Item '%s' could not be checked out because it is not currently checked in" % items[tag_id]["name"]
+                print "Item '%s' is already checked out" % items[tag_id]["name"]
                 continue
         else:
             raise ValueError("invalid value for in_out: %s" % in_out)
 
         # item is availible to check in or out
-        print "Checked %s %s" % (in_out, items[tag_id]["name"])
+        print "Checked %s '%s'" % (in_out, items[tag_id]["name"])
         scanned_items.append(tag_id)
 
     return scanned_items
 
 
-def send_request(in_out, user_id, items):
+def send_request(in_out, items, user_id=0):
     """
     PURPOSE: sends get request to server, checking items either in or out
     PARAMETERS: in_out: string, "in" or "out"
@@ -167,6 +171,19 @@ def send_request(in_out, user_id, items):
         #     print "%s: %r" % (key, value)
     else:
         print "ERROR: %d" % response.status_code
+
+
+def get_user_id():
+    """ gets a user ID, in the future, validates said ID """
+    while True:
+        try:
+            # TODO: validate user_id
+            user_id = int(raw_input("Scan ID card to begin: "))
+            break
+        except ValueError:
+            print "please enter a valid ID"
+
+    return user_id
 
 
 def get_items_from_db():
@@ -230,29 +247,30 @@ def main():
         in_out = set_kiosk_type()
 
         while True:
+            # display kiosk header
             kiosk_display(in_out)
-            while True:
-                try:
-                    # TODO: validate user_id
-                    user_id = int(raw_input("Scan ID card to begin: "))
-                    break
-                except ValueError:
-                    print "please enter a valid ID"
-            # return to kiosk type menu if Admin ID is entered
+            # get user ID
+            user_id = 0 # user id not nessissary for checkins
+            if in_out == "out":
+                user_id = get_user_id()
+            # return to kiosk type (in, out) menu if Admin ID is entered
             if user_id == ADMIN_ID:
                 break
+
             # scan items and send them to the database
             scanned_items = scan_items(items, reservations, in_out)
             if scanned_items:
-                send_request(in_out, user_id, scanned_items)
+                send_request(in_out, scanned_items, user_id=user_id)
                 reservations = get_reservations_from_db(items)
             else:
+                if scanned_items is None:
+                    break
                 print "No items to check %s" % in_out
 
             # wait x seconds until asking for new user ID
+            continue_delay = 5 # seconds
             print "\nContinue... ",
             sys.stdout.flush()  # must flush output because no newline
-            continue_delay = 3 # seconds
             for sec in xrange(continue_delay):
                 print "%d... " % (continue_delay - sec),
                 sys.stdout.flush() # must flush output because no newline
