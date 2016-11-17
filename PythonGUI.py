@@ -98,45 +98,49 @@ main_canvas = Canvas(frame, bg="black", width=1700, height=1000)
 main_canvas.pack()
 
 # creates the image for the background and adds it to the canvas
-background_image = ImageTk.PhotoImage(file="background6.gif")
+background_image = ImageTk.PhotoImage(file="background.gif")
 main_canvas.create_image(850, 500, image=background_image)
 
 #creates the image for the main logo and adds it to the canvas
-main_logo = ImageTk.PhotoImage(file="logo.png")
+main_logo = ImageTk.PhotoImage(file="main_logo.png")
 main_canvas.create_image(850, 300, image=main_logo, tags="logo")
 
 
 small_logo = ImageTk.PhotoImage(file="small_logo.png")
 #main_canvas.create_image(975, 100, image=small_logo, tags="small_logo")
 
+# Initializes variable fileName
 fileName = StringVar()
 
+# Sets fileName to entered data
 fileName_entry = Entry(root, textvariable=fileName)
 fileName_entry.configure(bg = '#d79600')
 
-text = fileName
+
+#text = fileName
 
 # Check Out button
 checkOutButton = Button(root, text="Check Out", command=checkout, highlightthickness=0,bd=0, activebackground='white')
 checkOutButton.pack()
 checkOutButton.place(x=660, y=800, width=380, height=130)
-checkOutImg = PhotoImage(file = 'checkout2.png')
+checkOutImg = PhotoImage(file = 'checkout_button.png')
 checkOutButton.configure(image = checkOutImg, bg='white')
 
 # Check In button
 checkInButton = Button(root, text="Check In", command=checkin, highlightthickness=0,bd=0, activebackground='white')
 checkInButton.pack()
 checkInButton.place(x=660, y=600, width=380, height=130)
-checkInImg = PhotoImage(file = 'checkin3.png')
+checkInImg = PhotoImage(file = 'checkin_button.png')
 checkInButton.configure(image = checkInImg, bg='white')
 
-# Home button
+# Home button from Check In
 homeButtonIn = Button(root, text="Home", command=goHomefromIn, highlightthickness=0,bd=0, activebackground='white')
-homeImageIn = PhotoImage(file = 'checkin3.png')
+homeImageIn = PhotoImage(file = 'checkin_button.png')
 homeButtonIn.configure(image = homeImageIn, bg='white')
 
+#Home button from Check Out
 homeButtonOut = Button(root, text="Home", command=goHomefromOut, highlightthickness=0,bd=0, activebackground='white')
-homeImageOut = PhotoImage(file = 'checkout2.png')
+homeImageOut = PhotoImage(file = 'checkout_button.png')
 homeButtonOut.configure(image = homeImageOut, bg='white')
 
 fileName_entry.focus()
