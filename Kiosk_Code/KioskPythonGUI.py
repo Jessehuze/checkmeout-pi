@@ -6,40 +6,48 @@ import Tkinter as tk
 from PIL import ImageTk,Image
 
 # disable certain linting warnings
-# pylint: disable=W0312,C0103,C0301
+# pylint: disable=W0312,C0103,C0301,W0603
 
 num1 = 50
-side_num = 0
+side_num = 0 # side to justify to: 0 = left, 1 = right, -1 = hidden
 validID = False
 name = ""
 
-# comment out either line to show or hide cursor
-CURSOR = '' # show cursor
-# CURSOR = 'none' # hide cursor
+#### FUNCTIONS ############################################################
 
 def addToList(*args):
-    try:
-    	global num1, validID, name
-    	global side_num
-    	value = fileName.get()
-    	if side_num == 0:
-    		label2 = main_canvas.create_text(30, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="w")
-    	elif side_num == 1:
-    		label2 = main_canvas.create_text(770, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="e")
-    	elif side_num == -1:
-    		label2 = main_canvas.create_text(900, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="w")
-    		name = value
+	""" called each time the enter key is pressed, parses keyboad input """
+	try:
+		global num1, validID, name
+		global side_num
+		value = fileName.get()
 
-    		if value:
-    			validID = True
-    			if validID == True:
-    				checkout()
-    	num1 = num1 + 30
-    	fileName_entry.delete(0, tk.END)
-    except ValueError:
-    	pass
+		if side_num == 0: # left side
+			label2 = main_canvas.create_text(30, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="w")
+
+		elif side_num == 1: # right side
+			label2 = main_canvas.create_text(770, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="e")
+
+		elif side_num == 2: # hidden off-screen right
+			label2 = main_canvas.create_text(900, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="w")
+
+		elif side_num == -1: # hidden off-screen right, read in as userID
+			label2 = main_canvas.create_text(900, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="w")
+
+			if value:
+				# TREVOR: verify the userID and return the user's name
+				validID = True
+				name = value
+				if validID == True:
+					checkout()
+		num1 = num1 + 30
+		fileName_entry.delete(0, tk.END)
+
+	except ValueError:
+		pass
 
 def login(*args):
+	""" after selecting checkout, prompt user for user ID """
 	try:
 		global side_num
 		side_num = -1
@@ -52,6 +60,7 @@ def login(*args):
 		pass
 
 def checkout(*args):
+	""" checkout items screen, accept item numbers and check out if possible """
 	try:
 		global side_num, num1, name
 		num1 = 50
@@ -72,6 +81,7 @@ def checkout(*args):
 		pass
 
 def checkin(*args):
+	""" checkin items screen, accept item numbers and check back in if possible """
 	try:
 		global side_num
 		side_num = 1
@@ -89,43 +99,61 @@ def checkin(*args):
 
 def goHomefromOut(*args):
     try:
-    	global num1
-    	num1 = 50
-    	main_canvas.delete("small_logo")
-    	main_canvas.delete("promptOut")
-    	main_canvas.delete("item_labels")
-    	main_canvas.delete("username")
-    	homeButtonOut.place(x=-446, y=-116)
-    	main_canvas.create_image(400, 125, image=main_logo, tags="logo")
-    	checkOutButton.place(x=288, y=380, width=225, height=77)
-    	checkInButton.place(x=288, y=280, width=225, height=77)
-    	fileName_entry.place(x=-500, y=-20, width=300, height=30)
-    	fileName_entry.delete(0, tk.END)
-    	# insert logout function here
+		global num1, side_num
+		side_num = 2
+		num1 = 50
+		main_canvas.delete("small_logo")
+		main_canvas.delete("promptOut")
+		main_canvas.delete("item_labels")
+		main_canvas.delete("username")
+		homeButtonOut.place(x=-446, y=-116)
+		main_canvas.create_image(400, 125, image=main_logo, tags="logo")
+		checkOutButton.place(x=288, y=380, width=225, height=77)
+		checkInButton.place(x=288, y=280, width=225, height=77)
+		fileName_entry.place(x=-500, y=-20, width=300, height=30)
+		fileName_entry.delete(0, tk.END)
+		# insert logout function here
     except ValueError:
     	pass
 
 def goHomefromIn(*args):
     try:
-    	global num1
-    	num1 = 50
-    	main_canvas.delete("small_logo")
-    	main_canvas.delete("promptIn")
-    	main_canvas.delete("item_labels")
-    	homeButtonIn.place(x=-446, y=-116)
-    	main_canvas.create_image(400, 125, image=main_logo, tags="logo")
-    	checkOutButton.place(x=288, y=380, width=225, height=77)
-    	checkInButton.place(x=288, y=280, width=225, height=77)
-    	fileName_entry.place(x=-500, y=-20, width=300, height=30)
-    	fileName_entry.delete(0, tk.END)
+		global num1, side_num
+		side_num = 2
+		num1 = 50
+		main_canvas.delete("small_logo")
+		main_canvas.delete("promptIn")
+		main_canvas.delete("item_labels")
+		homeButtonIn.place(x=-446, y=-116)
+		main_canvas.create_image(400, 125, image=main_logo, tags="logo")
+		checkOutButton.place(x=288, y=380, width=225, height=77)
+		checkInButton.place(x=288, y=280, width=225, height=77)
+		fileName_entry.place(x=-500, y=-20, width=300, height=30)
+		fileName_entry.delete(0, tk.END)
     except ValueError:
     	pass
 
+
+#### MAIN ######################################################################
+
+# DISPLAY TOGGLES
+show_cursor = True
+launch_fullscreen = False
+
+# initialize the window
 root = tk.Tk()
 root.title("CheckMeOut (Kiosk 1)")
 root.geometry('800x480')
-#root.attributes("-fullscreen", True)
 
+# apply display toggles
+if show_cursor:
+	CURSOR = ''
+else:
+	CURSOR = 'none'
+if launch_fullscreen:
+	root.attributes("-fullscreen", True)
+
+# initialize the frame, main canvas
 frame = tk.Frame(root)
 frame.config(cursor=CURSOR)
 frame.pack()
@@ -143,7 +171,7 @@ main_canvas.create_image(400, 125, image=main_logo, tags="logo")
 
 small_logo = ImageTk.PhotoImage(file="KioskSmallLogo.png")
 
-# Initializes variable fileName
+# Initializes variable fileName (to be used to store keyboard input)
 fileName = tk.StringVar()
 
 # Sets fileName to entered data
@@ -169,7 +197,7 @@ homeButtonIn = tk.Button(root, text="Home", command=goHomefromIn, highlightthick
 homeImageIn = ImageTk.PhotoImage(file='KioskCheckIn.png')
 homeButtonIn.configure(image=homeImageIn, bg='white')
 
-#Home button from Check Out
+# Home button from Check Out
 homeButtonOut = tk.Button(root, text="Home", command=goHomefromOut, highlightthickness=0, bd=0, activebackground='white', cursor=CURSOR)
 homeImageOut = ImageTk.PhotoImage(file='KioskCheckOut.png')
 homeButtonOut.configure(image=homeImageOut, bg='white')
@@ -180,7 +208,7 @@ checkOutImgFromLogin = ImageTk.PhotoImage(file='KioskCheckOut.png')
 loginToCheckoutButton.configure(image=checkOutImgFromLogin, bg='white')
 
 fileName_entry.focus()
-#root.focus_set()
+# root.focus_set()
 root.bind('<Return>', addToList)
 root.bind("<Escape>", lambda e: e.widget.quit())
 
