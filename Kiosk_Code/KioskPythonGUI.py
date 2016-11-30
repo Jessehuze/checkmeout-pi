@@ -148,29 +148,29 @@ fileName_entry.configure(bg = '#d79600')
 checkOutButton = Button(root, text="Check Out", command=login, highlightthickness=0,bd=0, activebackground='white', cursor = 'none')
 checkOutButton.pack()
 checkOutButton.place(x=288, y=380, width=225, height=77)
-checkOutImg = PhotoImage(file = 'KioskCheckOut.png')
+checkOutImg = ImageTk.PhotoImage(file = 'KioskCheckOut.png')
 checkOutButton.configure(image = checkOutImg, bg='white')
 
 # Check In button
 checkInButton = Button(root, text="Check In", command=checkin, highlightthickness=0,bd=0, activebackground='white', cursor = 'none')
 checkInButton.pack()
 checkInButton.place(x=288, y=280, width=225, height=77)
-checkInImg = PhotoImage(file = 'KioskCheckIn.png')
+checkInImg = ImageTk.PhotoImage(file = 'KioskCheckIn.png')
 checkInButton.configure(image = checkInImg, bg='white')
 
 # Home button from Check In
 homeButtonIn = Button(root, text="Home", command=goHomefromIn, highlightthickness=0,bd=0, activebackground='white', cursor = 'none')
-homeImageIn = PhotoImage(file = 'KioskCheckIn.png')
+homeImageIn = ImageTk.PhotoImage(file = 'KioskCheckIn.png')
 homeButtonIn.configure(image = homeImageIn, bg='white')
 
 #Home button from Check Out
 homeButtonOut = Button(root, text="Home", command=goHomefromOut, highlightthickness=0,bd=0, activebackground='white', cursor = 'none')
-homeImageOut = PhotoImage(file = 'KioskCheckOut.png')
+homeImageOut = ImageTk.PhotoImage(file = 'KioskCheckOut.png')
 homeButtonOut.configure(image = homeImageOut, bg='white')
 
 # Checkout Button from Login
 loginToCheckoutButton = Button(root, text="Check Out", command=checkout, highlightthickness=0,bd=0, activebackground='white', cursor = 'none')
-checkOutImgFromLogin = PhotoImage(file = 'KioskCheckOut.png')
+checkOutImgFromLogin = ImageTk.PhotoImage(file = 'KioskCheckOut.png')
 loginToCheckoutButton.configure(image = checkOutImgFromLogin, bg='white')
 
 fileName_entry.focus()
