@@ -17,15 +17,18 @@ name = ""
 
 def addToList(*args):
 	""" called each time the enter key is pressed, parses keyboad input """
+	# TODO: remove ValueError catches
 	try:
 		global num1, validID, name
 		global side_num
 		value = fileName.get()
 
-		if side_num == 0: # left side
+		if side_num == 0: # left side (checkout)
+			# TREVOR: parse tag ID here, return item name and status (pass/fail)
 			label2 = main_canvas.create_text(30, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="w")
 
-		elif side_num == 1: # right side
+		elif side_num == 1: # right side (checkin)
+			# TREVOR: parse tag ID here, return item name and status (pass/fail)
 			label2 = main_canvas.create_text(770, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="e")
 
 		elif side_num == 2: # hidden off-screen right
@@ -47,7 +50,7 @@ def addToList(*args):
 		pass
 
 def login(*args):
-	""" after selecting checkout, prompt user for user ID """
+	""" after selecting checkout, display prompt user for user ID """
 	try:
 		global side_num
 		side_num = -1
@@ -60,17 +63,21 @@ def login(*args):
 		pass
 
 def checkout(*args):
-	""" checkout items screen, accept item numbers and check out if possible """
+	""" checkout items screen, display buttons and info for checkOUT function """
 	try:
 		global side_num, num1, name
 		num1 = 50
 		side_num = 0
+		# hide unessissary buttons
 		checkInButton.place(x=-446, y=-116)
 		checkOutButton.place(x=-446, y=-116)
 		loginToCheckoutButton.place(x=-446, y=-116)
+		# delete unessissary logos
 		main_canvas.delete("logo")
 		main_canvas.delete("loginPrompt")
+		# place complete checkout button
 		homeButtonOut.place(x=520, y=383, width=225, height=77)
+		# place text/logos
 		fileName_entry.place(x=-530, y=-900, width=500, height=40)
 		main_canvas.create_image(620, 60, image=small_logo, tags="small_logo")
 		username = main_canvas.create_text(790, 180, font=("Purisa", 15), tags="username", text=" Welcome, " + name + "...", anchor="e")
@@ -81,13 +88,16 @@ def checkout(*args):
 		pass
 
 def checkin(*args):
-	""" checkin items screen, accept item numbers and check back in if possible """
+	""" checkin items screen, display buttons and info for checkIN function """
 	try:
 		global side_num
 		side_num = 1
+
+		# hide unessissary buttons/logos
 		checkInButton.place(x=-446, y=-116)
 		checkOutButton.place(x=-446, y=-116)
 		main_canvas.delete("logo")
+		# place needed buttons, logos, text
 		homeButtonIn.place(x=55, y=383, width=225, height=77)
 		fileName_entry.place(x=-600, y=-900, width=500, height=40)
 		main_canvas.create_image(185, 60, image=small_logo, tags="small_logo")
@@ -98,40 +108,53 @@ def checkin(*args):
 		pass
 
 def goHomefromOut(*args):
-    try:
+	""" transision back to homescreen, hide checkout diplay, place homescreen display """
+	try:
 		global num1, side_num
 		side_num = 2
 		num1 = 50
+
+		# TREVOR: send checkout items to database, refresh reservations list, return response
+		# DALTON: implement method of displaying alert if checkout should fail
+
+		# hide items from checkout display
 		main_canvas.delete("small_logo")
 		main_canvas.delete("promptOut")
 		main_canvas.delete("item_labels")
 		main_canvas.delete("username")
 		homeButtonOut.place(x=-446, y=-116)
+		# place items from homescreen diplay
 		main_canvas.create_image(400, 125, image=main_logo, tags="logo")
 		checkOutButton.place(x=288, y=380, width=225, height=77)
 		checkInButton.place(x=288, y=280, width=225, height=77)
 		fileName_entry.place(x=-500, y=-20, width=300, height=30)
 		fileName_entry.delete(0, tk.END)
-		# insert logout function here
-    except ValueError:
-    	pass
+	except ValueError:
+		pass
 
 def goHomefromIn(*args):
-    try:
+	""" transision back to homescreen, hide checkin diplay, place homescreen display """
+	try:
 		global num1, side_num
 		side_num = 2
 		num1 = 50
+
+		# TREVOR: send checkin items to database, refresh reservations list, return response
+		# DALTON: implement method of displaying alert if checkin should fail
+
+		# hide items from checkin display
 		main_canvas.delete("small_logo")
 		main_canvas.delete("promptIn")
 		main_canvas.delete("item_labels")
 		homeButtonIn.place(x=-446, y=-116)
+		# place items from homescreen diplay
 		main_canvas.create_image(400, 125, image=main_logo, tags="logo")
 		checkOutButton.place(x=288, y=380, width=225, height=77)
 		checkInButton.place(x=288, y=280, width=225, height=77)
 		fileName_entry.place(x=-500, y=-20, width=300, height=30)
 		fileName_entry.delete(0, tk.END)
-    except ValueError:
-    	pass
+	except ValueError:
+		pass
 
 
 #### MAIN ######################################################################
