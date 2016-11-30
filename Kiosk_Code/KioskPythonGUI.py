@@ -1,8 +1,8 @@
-from ScrolledText import *
-import ttk
+# from ScrolledText import *
+# import ttk
 import Tkinter as tk
-import tkMessageBox
-import tkFont
+# import tkMessageBox
+# import tkFont
 from PIL import ImageTk,Image
 
 # disable certain linting warnings
@@ -23,11 +23,11 @@ def addToList(*args):
     	global side_num
     	value = fileName.get()
     	if side_num == 0:
-    		label2 = main_canvas.create_text(30, num1, font=("Work Sans", 18),  tags="item_labels", text=value, anchor="w")
+    		label2 = main_canvas.create_text(30, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="w")
     	elif side_num == 1:
-    		label2 = main_canvas.create_text(770, num1, font=("Work Sans", 18),  tags="item_labels", text=value, anchor="e")
+    		label2 = main_canvas.create_text(770, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="e")
     	elif side_num == -1:
-    		label2 = main_canvas.create_text(900, num1, font=("Work Sans", 18),  tags="item_labels", text=value, anchor="w")
+    		label2 = main_canvas.create_text(900, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="w")
     		name = value
 
     		if value:
@@ -46,7 +46,7 @@ def login(*args):
 		checkInButton.place(x=-446, y=-116)
 		checkOutButton.place(x=-446, y=-116)
 		fileName_entry.place(x=-600, y=-900, width=500, height=40)
-		loginPrompt = main_canvas.create_text(400, 320, font=("Purisa", 27),  tags="loginPrompt", text="Scan your ID card to login.")
+		loginPrompt = main_canvas.create_text(400, 320, font=("Purisa", 27), tags="loginPrompt", text="Scan your ID card to login.")
 
 	except ValueError:
 		pass
@@ -64,8 +64,8 @@ def checkout(*args):
 		homeButtonOut.place(x=520, y=383, width=225, height=77)
 		fileName_entry.place(x=-530, y=-900, width=500, height=40)
 		main_canvas.create_image(620, 60, image=small_logo, tags="small_logo")
-		username = main_canvas.create_text(790, 180, font=("Purisa", 15),  tags="username", text=" Welcome, " + name + "...", anchor="e")
-		promptOut = main_canvas.create_text(630, 280, font=("Purisa", 15),  tags="promptOut", text="Scan your items and press\n"
+		username = main_canvas.create_text(790, 180, font=("Purisa", 15), tags="username", text=" Welcome, " + name + "...", anchor="e")
+		promptOut = main_canvas.create_text(630, 280, font=("Purisa", 15), tags="promptOut", text="Scan your items and press\n"
 		 																			+ "'check out' when you're\n"
 		 																			+ "finished.")
 	except ValueError:
@@ -81,7 +81,7 @@ def checkin(*args):
 		homeButtonIn.place(x=55, y=383, width=225, height=77)
 		fileName_entry.place(x=-600, y=-900, width=500, height=40)
 		main_canvas.create_image(185, 60, image=small_logo, tags="small_logo")
-		promptIn = main_canvas.create_text(165, 210, font=("Purisa", 15),  tags="promptIn", text="Scan your items and press\n"
+		promptIn = main_canvas.create_text(165, 210, font=("Purisa", 15), tags="promptIn", text="Scan your items and press\n"
 		 																			+ "'check in' when you're\n"
 		 																			+ "finished.")
 	except ValueError:
@@ -148,36 +148,36 @@ fileName = tk.StringVar()
 
 # Sets fileName to entered data
 fileName_entry = tk.Entry(root, textvariable=fileName)
-fileName_entry.configure(bg = '#d79600')
+fileName_entry.configure(bg='#d79600')
 
 # Check Out button
-checkOutButton = tk.Button(root, text="Check Out", command=login, highlightthickness=0,bd=0, activebackground='white', cursor=CURSOR)
+checkOutButton = tk.Button(root, text="Check Out", command=login, highlightthickness=0, bd=0, activebackground='white', cursor=CURSOR)
 checkOutButton.pack()
 checkOutButton.place(x=288, y=380, width=225, height=77)
-checkOutImg = ImageTk.PhotoImage(file = 'KioskCheckOut.png')
-checkOutButton.configure(image = checkOutImg, bg='white')
+checkOutImg = ImageTk.PhotoImage(file='KioskCheckOut.png')
+checkOutButton.configure(image=checkOutImg, bg='white')
 
 # Check In button
-checkInButton = tk.Button(root, text="Check In", command=checkin, highlightthickness=0,bd=0, activebackground='white', cursor=CURSOR)
+checkInButton = tk.Button(root, text="Check In", command=checkin, highlightthickness=0, bd=0, activebackground='white', cursor=CURSOR)
 checkInButton.pack()
 checkInButton.place(x=288, y=280, width=225, height=77)
-checkInImg = ImageTk.PhotoImage(file = 'KioskCheckIn.png')
-checkInButton.configure(image = checkInImg, bg='white')
+checkInImg = ImageTk.PhotoImage(file='KioskCheckIn.png')
+checkInButton.configure(image=checkInImg, bg='white')
 
 # Home button from Check In
-homeButtonIn = tk.Button(root, text="Home", command=goHomefromIn, highlightthickness=0,bd=0, activebackground='white', cursor=CURSOR)
-homeImageIn = ImageTk.PhotoImage(file = 'KioskCheckIn.png')
-homeButtonIn.configure(image = homeImageIn, bg='white')
+homeButtonIn = tk.Button(root, text="Home", command=goHomefromIn, highlightthickness=0, bd=0, activebackground='white', cursor=CURSOR)
+homeImageIn = ImageTk.PhotoImage(file='KioskCheckIn.png')
+homeButtonIn.configure(image=homeImageIn, bg='white')
 
 #Home button from Check Out
-homeButtonOut = tk.Button(root, text="Home", command=goHomefromOut, highlightthickness=0,bd=0, activebackground='white', cursor=CURSOR)
-homeImageOut = ImageTk.PhotoImage(file = 'KioskCheckOut.png')
-homeButtonOut.configure(image = homeImageOut, bg='white')
+homeButtonOut = tk.Button(root, text="Home", command=goHomefromOut, highlightthickness=0, bd=0, activebackground='white', cursor=CURSOR)
+homeImageOut = ImageTk.PhotoImage(file='KioskCheckOut.png')
+homeButtonOut.configure(image=homeImageOut, bg='white')
 
 # Checkout Button from Login
-loginToCheckoutButton = tk.Button(root, text="Check Out", command=checkout, highlightthickness=0,bd=0, activebackground='white', cursor=CURSOR)
-checkOutImgFromLogin = ImageTk.PhotoImage(file = 'KioskCheckOut.png')
-loginToCheckoutButton.configure(image = checkOutImgFromLogin, bg='white')
+loginToCheckoutButton = tk.Button(root, text="Check Out", command=checkout, highlightthickness=0, bd=0, activebackground='white', cursor=CURSOR)
+checkOutImgFromLogin = ImageTk.PhotoImage(file='KioskCheckOut.png')
+loginToCheckoutButton.configure(image=checkOutImgFromLogin, bg='white')
 
 fileName_entry.focus()
 #root.focus_set()
