@@ -4,6 +4,7 @@ import Tkinter as tk
 # import tkMessageBox
 # import tkFont
 from PIL import ImageTk,Image
+import functionality as func
 
 # disable certain linting warnings
 # pylint: disable=W0312,C0103,C0301,W0603
