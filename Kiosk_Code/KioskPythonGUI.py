@@ -3,7 +3,8 @@
 import Tkinter as tk
 # import tkMessageBox
 # import tkFont
-from PIL import ImageTk,Image
+from PIL import ImageTk
+from sys import platform
 import functionality as func
 
 # disable certain linting warnings
@@ -166,22 +167,19 @@ def goHomefromIn(*args):
 print "sync"
 func.sync_database(update_items=True)
 
-# DISPLAY TOGGLES
-show_cursor = False
-launch_fullscreen = True
-
 # initialize the window
 root = tk.Tk()
 root.title("CheckMeOut (Kiosk 1)")
 root.geometry('800x480')
 
 # apply display toggles
-if show_cursor:
+if platform == "darwin" or platform == "win32":
+    # running on windows or mac, show cursor
 	CURSOR = ''
 else:
-	CURSOR = 'none'
-if launch_fullscreen:
+	# linux (pi), fullscreen and hide cursor
 	root.attributes("-fullscreen", True)
+	CURSOR = 'none'
 
 # initialize the frame, main canvas
 frame = tk.Frame(root)
