@@ -167,8 +167,8 @@ print "sync"
 func.sync_database(update_items=True)
 
 # DISPLAY TOGGLES
-show_cursor = True
-launch_fullscreen = False
+show_cursor = False
+launch_fullscreen = True
 
 # initialize the window
 root = tk.Tk()
