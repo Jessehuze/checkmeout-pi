@@ -27,7 +27,7 @@ def set_user_id(id):
     # TODO: implement user id validation
     global USER_ID
     USER_ID = id
-    return ("Unkown user", True)
+    return ("Trevor", True)
 
 def verify_item(tag_id):
     """ verfiy that an item can be checked in or out, return name and status """
