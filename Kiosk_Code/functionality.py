@@ -1,9 +1,5 @@
 """
-PURPOSE: accept input from an external RFID reader and communicate the scanned items with
-         the database in order to check items in and out. This code is meant to run on a
-         rasberry pi with connected RFID reader.
-	
-	 Programmers: Trevor Ross, Dalton Lobosky, Jason Beard
+provides funtionality for the GUI to interface with database
 
 """
 import sys
@@ -13,183 +9,106 @@ import requests
 # scan ADMIN_ID to switch between checkin and checkout station
 ADMIN_ID = 20219
 STORE_ID = 1
-# color terminal output
-HEADER = '\033[95m'
-BLUE = '\033[94m'
-GREEN = '\033[92m'
-YELLOW = '\033[93m'
-RED = '\033[91m'
-ENDC = '\033[0m'
-BOLD = '\033[1m'
-UNDERLINE = '\033[4m'
+KIOSK_TYPE = None
+USER_ID = None
+ITEMS = {}
+RESERVATIONS = {}
+CHECKED_ITEMS = []
 
 
-def set_kiosk_type():
-    """
-    PURPOSE: determines the kiosk type (checkin or checkout)
-    RETURNS: "in" or "out"
-    """
-    # clear the terminal
-    print chr(27) + "[2J"
-    # print the header title
-    print "#"*80
-    print
-    print "Admin Panel"
-    print
-    print "#"*80
-    print
-
-    # get input from user
-    print "Checking in or checking out?"
-    in_out = raw_input("in/out: ")
-    while in_out not in ("in", "out"):
-        in_out = raw_input("in/out: ")
-
-    return in_out
+def set_kiosk_type(in_out):
+    """ sets the kiosk type to either in or out """
+    global KIOSK_TYPE
+    KIOSK_TYPE = in_out
 
 
-def kiosk_display(in_out):
-    """
-    PURPOSE: Displays the kiosk header for kiosk type (in or out)
-    """
-    # clear the terminal
-    print chr(27) + "[2J"
+def set_user_id(id):
+    """ validates user id and returns name """
+    # TODO: implement user id validation
+    global USER_ID
+    USER_ID = id
+    return ("Unkown user", True)
 
-    print "#"*80
-    print
-    print "Welcome to the Check%s Kiosk!" % in_out
-    print
-    print "#"*80
-    print
+def verify_item(tag_id):
+    """ verfiy that an item can be checked in or out, return name and status """
+    # ensure tag_id is an integer
+    try:
+        tag_id = int(tag_id)
+    except ValueError:
+        return ("Invalid item", False)
 
+    # ensure tag_id is a valid tag_id
+    if tag_id not in ITEMS.keys():
+        return ("Invalid item", False)
 
-def scan_items(items, reservations, in_out):
-    """
-    PURPOSE: Scan items from keyboard input
-    PARAMETERS: items: dict of items in database
-                reservations: dict of reservations in database
-                in_out: string, "in" or "out"
-    RETURNS: list of item numbers (formated as integers)
-    """
-    print "Scan items, type 'done' to finish"
-    scanned_items = []
+    # ensure item has not already been checked in this cycle
+    if tag_id in CHECKED_ITEMS:
+        return("Item already scanned", False)
+    # ensure item is available to check in
+    if KIOSK_TYPE == "in":
+        if tag_id not in RESERVATIONS.keys():
+            return ("Item is already checked in", False)
+    # ensure item is available to check out
+    elif KIOSK_TYPE == "out":
+        if tag_id in RESERVATIONS.keys():
+            return ("Item is already checked out", False)
+    else:
+        raise ValueError("invalid value for KIOSK_TYPE: %s" % KIOSK_TYPE)
 
-    while True:
-        tag_id = raw_input("> ")
-        # loop until user is done
-        if tag_id == "done":
-            break
-        # ensure tag_id is an integer
-        try:
-            tag_id = int(tag_id)
-        except ValueError:
-            print "%stag ID: %r is of an invalid format, must be integer. Enter 'done' to finish" % (YELLOW, tag_id)
-            print ENDC
-            continue
-        # ensure tag_id is a valid tag_id
-        if tag_id not in items.keys():
-            if tag_id == ADMIN_ID:
-                print "ADMIN ID scanned, exiting to menu..."
-                return None
-            else:
-                print "%sInvalid tag ID: %r" % (YELLOW, tag_id)
-                print "Valid tag IDs: %r" % items.keys()
-                print ENDC
-                continue
-        # ensure item has not already been checked in this cycle
-        if tag_id in scanned_items:
-            print "%sItem '%s' has already been scanned" % (YELLOW, items[tag_id]["name"])
-            print ENDC
-            continue
-        # ensure item is available to check in
-        if in_out == "in":
-            if tag_id not in reservations.keys():
-                print "%sItem '%s' is already checked in" % (YELLOW, items[tag_id]["name"])
-                print ENDC
-                continue
-        # ensure item is available to check out
-        elif in_out == "out":
-            if tag_id in reservations.keys():
-                print "%sItem '%s' is already checked out" % (YELLOW, items[tag_id]["name"])
-                print ENDC
-                continue
-        else:
-            raise ValueError("invalid value for in_out: %s" % in_out)
-
-        # item is availible to check in or out
-        print "%sChecked %s '%s'" % (GREEN, in_out, items[tag_id]["name"])
-        print ENDC
-        scanned_items.append(tag_id)
-
-    return scanned_items
+    # item is availible to check in or out
+    CHECKED_ITEMS.append(tag_id)
+    return (ITEMS[tag_id]["name"], True)
 
 
-def send_request(in_out, items, user_id=0):
-    """
-    PURPOSE: sends get request to server, checking items either in or out
-    PARAMETERS: in_out: string, "in" or "out"
-                user_id: int, user ID
-                items: list of strings, each string is an item ID
-    """
+def send_request():
+    """ PURPOSE: sends get request to server, checking items either in or out """
     results = {"success": [], "fail": []}
+    global USER_ID
+    if not USER_ID:
+        USER_ID = 0
+    else:
+        USER_ID = int(USER_ID)
+    if not CHECKED_ITEMS:
+        return ("No items to check", True)
 
     # get request (sends data to database)
     req_str = "http://api.checkmeout.us.to/kiosk/check%s?SID=%d&UID=%d&items=[%s]"
     # req_str = "http://api.checkmeout.dev/kiosk/check%s?SID=%d&UID=%d&items=[%s]"
-    response = requests.get(req_str % (in_out, STORE_ID, user_id, ",".join(map(str, items))))
+    response = requests.get(req_str % (KIOSK_TYPE, STORE_ID, USER_ID, ",".join(map(str, CHECKED_ITEMS))))
 
     # check response (get data from database)
     if response.status_code == 200:
         response = response.json()
         # print response
         try:
-            print "\nITEMS SUCCEEDED:"
-
             # response differes based on checking operation
-            # TODO: ask about bug:
             #   checking IN response: [... {'items_updated': []}, ...]
             #   checking OUT response: [... {'items_saved': []}, ...]
-            if in_out == "in":
+            if KIOSK_TYPE == "in":
                 success_key = "items_updated"
             else:
                 success_key = "items_saved"
 
             for item in response[success_key]:
                 results["success"].append(item["item_tag"])
-                print GREEN + item["item_name"] + ENDC # pretty colors
-            print "\nITEMS FAILED:"
             for item in response["items_failed"]:
                 if "item_name" in item.keys():
                     # valid tag_id but invalid check operation
                     results["fail"].append(item["item_tag"])
-                    print "%s%s%s beacuse %s" % (RED, item["item_name"], ENDC, item["reason"]) # pretty colors
                 else:
                     # invalid tag_id
                     results["fail"].append(item["item_tag"])
-                    print "%s%s%s beacuse %s" % (RED, "'Unknown item'", ENDC, item["reason"]) # pretty colors
         except KeyError:
-            print "ENCOUNTERED ERROR PARSING RESPONSE FOR CHECK%s" % in_out
-            print response
-            exit(1)
+            return ("Problem parsing: %r" % response, False)
 
-        # print "\nRESULT:"
-        # for key, value in response.json().items():
-        #     print "%s: %r" % (key, value)
+        # check if all items were successfully checked
+        if len(CHECKED_ITEMS) == len(results["success"]):
+            return ("All items succeeded", True)
+        else:
+            return ("Some items failed", False)
+
     else:
-        print "ERROR: %d" % response.status_code
-
-
-def get_user_id():
-    """ gets a user ID, in the future, validates said ID """
-    while True:
-        try:
-            # TODO: validate user_id
-            user_id = int(raw_input("Scan ID card to begin: "))
-            break
-        except ValueError:
-            print "please enter a valid ID"
-
-    return user_id
+        return ("ERROR: %d" % response.status_code, False)
 
 
 def get_items_from_db():
@@ -241,6 +160,16 @@ def get_reservations_from_db(items):
     return reservation_dict
 
 
+def sync_database(update_items=False):
+    """ queries the database to update ITEMS and RESERVATIOINS dicts """
+    global ITEMS, RESERVATIONS, CHECKED_ITEMS
+
+    if update_items:
+        ITEMS = get_items_from_db()
+    RESERVATIONS = get_reservations_from_db(ITEMS)
+    CHECKED_ITEMS = []
+
+
 def main():
     """
     PURPOSE: loop kiosk progam endlessly
@@ -249,8 +178,8 @@ def main():
     reservations = get_reservations_from_db(items)
 
     while True: # endless loop
-        # set kiosk function (checkin or checkout)
-        in_out = set_kiosk_type()
+        global KIOSK_TYPE
+        KIOSK_TYPE = set_kiosk_type()
 
         while True:
             # display kiosk header

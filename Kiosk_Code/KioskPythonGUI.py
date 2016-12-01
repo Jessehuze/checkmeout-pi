@@ -18,37 +18,34 @@ name = ""
 
 def addToList(*args):
 	""" called each time the enter key is pressed, parses keyboad input """
-	# TODO: remove ValueError catches
-	try:
-		global num1, validID, name
-		global side_num
-		value = fileName.get()
+	# TODO: remove all ValueError catches
+	global num1, validID, name
+	global side_num
+	value = fileName.get()
+	success = True
 
-		if side_num == 0: # left side (checkout)
-			# TREVOR: parse tag ID here, return item name and status (pass/fail)
-			label2 = main_canvas.create_text(30, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="w")
+	if side_num == 0: # left side (checkout)
+		(item_name, success) = func.verify_item(value)
+		label2 = main_canvas.create_text(30, num1, font=("Work Sans", 18), tags="item_labels", text=item_name, anchor="w")
 
-		elif side_num == 1: # right side (checkin)
-			# TREVOR: parse tag ID here, return item name and status (pass/fail)
-			label2 = main_canvas.create_text(770, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="e")
+	elif side_num == 1: # right side (checkin)
+		(item_name, success) = func.verify_item(value)
+		label2 = main_canvas.create_text(770, num1, font=("Work Sans", 18), tags="item_labels", text=item_name, anchor="e")
 
-		elif side_num == 2: # hidden off-screen right
-			label2 = main_canvas.create_text(900, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="w")
+	elif side_num == 2: # hidden off-screen right
+		label2 = main_canvas.create_text(900, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="w")
 
-		elif side_num == -1: # hidden off-screen right, read in as userID
-			label2 = main_canvas.create_text(900, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="w")
+	elif side_num == -1: # hidden off-screen right, read in as userID
+		label2 = main_canvas.create_text(900, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="w")
 
-			if value:
-				# TREVOR: verify the userID and return the user's name
-				validID = True
-				name = value
-				if validID == True:
-					checkout()
-		num1 = num1 + 30
-		fileName_entry.delete(0, tk.END)
+		if value:
+			(name, validID) = func.set_user_id(value)
+			if validID:
+				checkout()
+	num1 = num1 + 30
+	fileName_entry.delete(0, tk.END)
 
-	except ValueError:
-		pass
+	return success
 
 def login(*args):
 	""" after selecting checkout, display prompt user for user ID """
@@ -69,6 +66,8 @@ def checkout(*args):
 		global side_num, num1, name
 		num1 = 50
 		side_num = 0
+		func.set_kiosk_type("out")
+
 		# hide unessissary buttons
 		checkInButton.place(x=-446, y=-116)
 		checkOutButton.place(x=-446, y=-116)
@@ -90,23 +89,22 @@ def checkout(*args):
 
 def checkin(*args):
 	""" checkin items screen, display buttons and info for checkIN function """
-	try:
-		global side_num
-		side_num = 1
+	global side_num
+	side_num = 1
+	func.set_kiosk_type("in")
 
-		# hide unessissary buttons/logos
-		checkInButton.place(x=-446, y=-116)
-		checkOutButton.place(x=-446, y=-116)
-		main_canvas.delete("logo")
-		# place needed buttons, logos, text
-		homeButtonIn.place(x=55, y=383, width=225, height=77)
-		fileName_entry.place(x=-600, y=-900, width=500, height=40)
-		main_canvas.create_image(185, 60, image=small_logo, tags="small_logo")
-		promptIn = main_canvas.create_text(165, 210, font=("Purisa", 15), tags="promptIn", text="Scan your items and press\n"
-		 																			+ "'check in' when you're\n"
-		 																			+ "finished.")
-	except ValueError:
-		pass
+	# hide unessissary buttons/logos
+	checkInButton.place(x=-446, y=-116)
+	checkOutButton.place(x=-446, y=-116)
+	main_canvas.delete("logo")
+	# place needed buttons, logos, text
+	homeButtonIn.place(x=55, y=383, width=225, height=77)
+	fileName_entry.place(x=-600, y=-900, width=500, height=40)
+	main_canvas.create_image(185, 60, image=small_logo, tags="small_logo")
+	promptIn = main_canvas.create_text(165, 210, font=("Purisa", 15), tags="promptIn", text="Scan your items and press\n"
+																				+ "'check in' when you're\n"
+																				+ "finished.")
+
 
 def goHomefromOut(*args):
 	""" transision back to homescreen, hide checkout diplay, place homescreen display """
@@ -116,6 +114,8 @@ def goHomefromOut(*args):
 		num1 = 50
 
 		# TREVOR: send checkout items to database, refresh reservations list, return response
+		func.send_request()
+		func.sync_database()
 		# DALTON: implement method of displaying alert if checkout should fail
 
 		# hide items from checkout display
@@ -141,6 +141,8 @@ def goHomefromIn(*args):
 		num1 = 50
 
 		# TREVOR: send checkin items to database, refresh reservations list, return response
+		func.send_request()
+		func.sync_database()
 		# DALTON: implement method of displaying alert if checkin should fail
 
 		# hide items from checkin display
@@ -159,6 +161,10 @@ def goHomefromIn(*args):
 
 
 #### MAIN ######################################################################
+
+# SYNC FROM DATABASE
+print "sync"
+func.sync_database(update_items=True)
 
 # DISPLAY TOGGLES
 show_cursor = True
