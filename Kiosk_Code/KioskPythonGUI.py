@@ -48,45 +48,40 @@ def addToList(*args):
 
 	return success
 
+
 def login(*args):
 	""" after selecting checkout, display prompt user for user ID """
-	try:
-		global side_num
-		side_num = -1
-		checkInButton.place(x=-446, y=-116)
-		checkOutButton.place(x=-446, y=-116)
-		fileName_entry.place(x=-600, y=-900, width=500, height=40)
-		loginPrompt = main_canvas.create_text(400, 320, font=("Purisa", 27), tags="loginPrompt", text="Scan your ID card to login.")
+	global side_num
+	side_num = -1
+	checkInButton.place(x=-446, y=-116)
+	checkOutButton.place(x=-446, y=-116)
+	fileName_entry.place(x=-600, y=-900, width=500, height=40)
+	loginPrompt = main_canvas.create_text(400, 320, font=("Purisa", 27), tags="loginPrompt", text="Scan your ID card to login.")
 
-	except ValueError:
-		pass
 
 def checkout(*args):
 	""" checkout items screen, display buttons and info for checkOUT function """
-	try:
-		global side_num, num1, name
-		num1 = 50
-		side_num = 0
-		func.set_kiosk_type("out")
+	global side_num, num1, name
+	num1 = 50
+	side_num = 0
+	func.set_kiosk_type("out")
 
-		# hide unessissary buttons
-		checkInButton.place(x=-446, y=-116)
-		checkOutButton.place(x=-446, y=-116)
-		loginToCheckoutButton.place(x=-446, y=-116)
-		# delete unessissary logos
-		main_canvas.delete("logo")
-		main_canvas.delete("loginPrompt")
-		# place complete checkout button
-		homeButtonOut.place(x=520, y=383, width=225, height=77)
-		# place text/logos
-		fileName_entry.place(x=-530, y=-900, width=500, height=40)
-		main_canvas.create_image(620, 60, image=small_logo, tags="small_logo")
-		username = main_canvas.create_text(790, 180, font=("Purisa", 15), tags="username", text=" Welcome, " + name + "...", anchor="e")
-		promptOut = main_canvas.create_text(630, 280, font=("Purisa", 15), tags="promptOut", text="Scan your items and press\n"
-		 																			+ "'check out' when you're\n"
-		 																			+ "finished.")
-	except ValueError:
-		pass
+	# hide unessissary buttons
+	checkInButton.place(x=-446, y=-116)
+	checkOutButton.place(x=-446, y=-116)
+	loginToCheckoutButton.place(x=-446, y=-116)
+	# delete unessissary logos
+	main_canvas.delete("logo")
+	main_canvas.delete("loginPrompt")
+	# place complete checkout button
+	homeButtonOut.place(x=520, y=383, width=225, height=77)
+	# place text/logos
+	fileName_entry.place(x=-530, y=-900, width=500, height=40)
+	main_canvas.create_image(620, 60, image=small_logo, tags="small_logo")
+	username = main_canvas.create_text(790, 180, font=("Purisa", 15), tags="username", text=" Welcome, " + name + "...", anchor="e")
+	message = "Scan your items and press\n'check out' when you're\nfinished."
+	promptOut = main_canvas.create_text(630, 280, font=("Purisa", 15), tags="promptOut", text=message)
+
 
 def checkin(*args):
 	""" checkin items screen, display buttons and info for checkIN function """
@@ -102,9 +97,8 @@ def checkin(*args):
 	homeButtonIn.place(x=55, y=383, width=225, height=77)
 	fileName_entry.place(x=-600, y=-900, width=500, height=40)
 	main_canvas.create_image(185, 60, image=small_logo, tags="small_logo")
-	promptIn = main_canvas.create_text(165, 210, font=("Purisa", 15), tags="promptIn", text="Scan your items and press\n"
-																				+ "'check in' when you're\n"
-																				+ "finished.")
+	message = "Scan your items and press\n'check out' when you're\nfinished."
+	promptIn = main_canvas.create_text(165, 210, font=("Purisa", 15), tags="promptIn", text=message)
 
 def goHomefromLogin():
 	""" transision back to homescreen, hide login diplay, place homescreen display """

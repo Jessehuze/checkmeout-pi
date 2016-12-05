@@ -1,6 +1,4 @@
 """ provides funtionality for the GUI to interface with database """
-import sys
-import time
 import requests
 
 # global variables
