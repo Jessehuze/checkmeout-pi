@@ -1,8 +1,4 @@
-# from ScrolledText import *
-# import ttk
 import Tkinter as tk
-# import tkMessageBox
-# import tkFont
 from PIL import ImageTk
 from sys import platform
 import functionality as func
@@ -11,7 +7,7 @@ import functionality as func
 # pylint: disable=W0312,C0103,C0301,W0603
 
 num1 = 50
-side_num = 0 # side to justify to: 0 = left, 1 = right, -1 = hidden
+side_num = 2
 validID = False
 name = ""
 
@@ -19,7 +15,6 @@ name = ""
 
 def addToList(*args):
 	""" called each time the enter key is pressed, parses keyboad input """
-	# TODO: remove all ValueError catches
 	global num1, validID, name
 	global side_num
 	value = fileName.get()
@@ -40,9 +35,12 @@ def addToList(*args):
 		label2 = main_canvas.create_text(900, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="w")
 
 		if value:
-			(name, validID) = func.set_user_id(value)
+			(name, validID) = func.verify_user(value)
 			if validID:
 				checkout()
+			else:
+				goHomefromLogin()
+				# DALTON: show error message: "Invalid User ID"
 	num1 = num1 + 30
 	fileName_entry.delete(0, tk.END)
 
@@ -106,33 +104,37 @@ def checkin(*args):
 																				+ "'check in' when you're\n"
 																				+ "finished.")
 
+def goHomefromLogin():
+	""" transision back to homescreen, hide login diplay, place homescreen display """
+	main_canvas.delete("logo")
+	main_canvas.delete("loginPrompt")
+	loginToCheckoutButton.place(x=-446, y=-116)
+	goHomefromOut()
+
 
 def goHomefromOut(*args):
 	""" transision back to homescreen, hide checkout diplay, place homescreen display """
-	try:
-		global num1, side_num
-		side_num = 2
-		num1 = 50
+	global num1, side_num
+	side_num = 2
+	num1 = 50
 
-		# TREVOR: send checkout items to database, refresh reservations list, return response
-		func.send_request()
-		func.sync_database()
-		# DALTON: implement method of displaying alert if checkout should fail
+	# TREVOR: send checkout items to database, refresh reservations list, return response
+	func.send_request()
+	func.sync_database()
+	# DALTON: implement method of displaying alert if checkout should fail
 
-		# hide items from checkout display
-		main_canvas.delete("small_logo")
-		main_canvas.delete("promptOut")
-		main_canvas.delete("item_labels")
-		main_canvas.delete("username")
-		homeButtonOut.place(x=-446, y=-116)
-		# place items from homescreen diplay
-		main_canvas.create_image(400, 125, image=main_logo, tags="logo")
-		checkOutButton.place(x=288, y=380, width=225, height=77)
-		checkInButton.place(x=288, y=280, width=225, height=77)
-		fileName_entry.place(x=-500, y=-20, width=300, height=30)
-		fileName_entry.delete(0, tk.END)
-	except ValueError:
-		pass
+	# hide items from checkout display
+	main_canvas.delete("small_logo")
+	main_canvas.delete("promptOut")
+	main_canvas.delete("item_labels")
+	main_canvas.delete("username")
+	homeButtonOut.place(x=-446, y=-116)
+	# place items from homescreen diplay
+	main_canvas.create_image(400, 125, image=main_logo, tags="logo")
+	checkOutButton.place(x=288, y=380, width=225, height=77)
+	checkInButton.place(x=288, y=280, width=225, height=77)
+	fileName_entry.place(x=-500, y=-20, width=300, height=30)
+	fileName_entry.delete(0, tk.END)
 
 def goHomefromIn(*args):
 	""" transision back to homescreen, hide checkin diplay, place homescreen display """
@@ -164,8 +166,7 @@ def goHomefromIn(*args):
 #### MAIN ######################################################################
 
 # SYNC FROM DATABASE
-print "sync"
-func.sync_database(update_items=True)
+func.sync_database(update_all=True)
 
 # initialize the window
 root = tk.Tk()

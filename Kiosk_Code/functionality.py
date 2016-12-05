@@ -9,6 +9,7 @@ KIOSK_TYPE = None
 USER_ID = None
 ITEMS = {}
 RESERVATIONS = {}
+USERS = {}
 CHECKED_ITEMS = []
 
 # pylint: disable=W0603
@@ -17,14 +18,6 @@ def set_kiosk_type(in_out):
     """ sets the kiosk type to either in or out """
     global KIOSK_TYPE
     KIOSK_TYPE = in_out
-
-
-def set_user_id(user_id):
-    """ validates user id and returns name """
-    # TODO: implement user id validation
-    global USER_ID
-    USER_ID = user_id
-    return ("Unkown user", True)
 
 
 def verify_item(tag_id):
@@ -58,6 +51,24 @@ def verify_item(tag_id):
     return (ITEMS[tag_id]["name"], True)
 
 
+def verify_user(card_id):
+    """ verify that a user exists at a store, if so, return that user's first name """
+    global USER_ID
+    # ensure card_id is an integer
+    try:
+        card_id = int(card_id)
+    except ValueError:
+        return ("Invalid user", False)
+
+    # ensure card_id is a valid card_id
+    if card_id not in USERS.keys():
+        return ("Invalid item", False)
+
+    # user is valid, return name
+    USER_ID = card_id
+    return (USERS[card_id]["first_name"], True)
+
+
 def send_request():
     """ PURPOSE: sends get request to server, checking items either in or out """
     results = {"success": [], "fail": []}
@@ -76,35 +87,53 @@ def send_request():
     # check response (get data from database)
     if response.status_code == 200:
         response = response.json()
-        try:
-            # response differes based on checking operation
-            #   checking IN response: [... {'items_updated': []}, ...]
-            #   checking OUT response: [... {'items_saved': []}, ...]
-            if KIOSK_TYPE == "in":
-                success_key = "items_updated"
-            else:
-                success_key = "items_saved"
-
-            for item in response[success_key]:
-                results["success"].append(item["item_tag"])
-            for item in response["items_failed"]:
-                if "item_name" in item.keys():
-                    # valid tag_id but invalid check operation
-                    results["fail"].append(item["item_tag"])
+        if response["status"] == u'success':
+            try:
+                # response differes based on checking operation
+                #   checking IN response: [... {'items_updated': []}, ...]
+                #   checking OUT response: [... {'items_saved': []}, ...]
+                if KIOSK_TYPE == "in":
+                    success_key = "items_updated"
                 else:
-                    # invalid tag_id
-                    results["fail"].append(item["item_tag"])
-        except KeyError:
-            return ("Problem parsing: %r" % response, False)
+                    success_key = "items_saved"
 
-        # check if all items were successfully checked
-        if len(CHECKED_ITEMS) == len(results["success"]):
-            return ("All items succeeded", True)
+                for item in response[success_key]:
+                    results["success"].append(item["item_tag"])
+                for item in response["items_failed"]:
+                    if "item_name" in item.keys():
+                        # valid tag_id but invalid check operation
+                        results["fail"].append(item["item_tag"])
+                    else:
+                        # invalid tag_id
+                        results["fail"].append(item["item_tag"])
+            except KeyError:
+                return ("Problem parsing: %r" % response, False)
+
+            # check if all items were successfully checked
+            if len(CHECKED_ITEMS) == len(results["success"]):
+                return ("All items succeeded", True)
+            else:
+                return ("Some items failed", False)
         else:
-            return ("Some items failed", False)
+            return("ERROR: %s" % response["status"], False)
 
     else:
         return ("ERROR: %d" % response.status_code, False)
+
+
+def get_users_from_db():
+    """ gets the users from the database and returns them as a dict """
+    users_dict = {}
+
+    response = requests.get("http://api.checkmeout.us.to/kiosk/users")
+    # check response (get data from database)
+    if response.status_code == 200:
+        for user in response.json()["users"]:
+            users_dict[user["card_id"]] = user
+    else:
+        raise ValueError("Error getting items from DB")
+
+    return users_dict
 
 
 def get_items_from_db():
@@ -154,11 +183,12 @@ def get_reservations_from_db(items):
     return reservation_dict
 
 
-def sync_database(update_items=False):
+def sync_database(update_all=False):
     """ queries the database to update ITEMS and RESERVATIOINS dicts """
-    global ITEMS, RESERVATIONS, CHECKED_ITEMS
+    global ITEMS, RESERVATIONS, CHECKED_ITEMS, USERS
 
-    if update_items:
+    if update_all:
         ITEMS = get_items_from_db()
+        USERS = get_users_from_db()
     RESERVATIONS = get_reservations_from_db(ITEMS)
     CHECKED_ITEMS = []
