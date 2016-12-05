@@ -115,8 +115,9 @@ def goHomefromOut(*args):
 
 	(status, success) = func.send_request()
 	if success:
-		func.sync_database()
+		(sync_status, sync_success) = func.sync_database()
 	else:
+		func.clear_checked_items()
 		print status
 		# DALTON: implement method of displaying alert if checkout should fail
 
@@ -139,6 +140,7 @@ def goHomefromIn(*args):
 	if success:
 		func.sync_database()
 	else:
+		func.clear_checked_items()
 		print status
 		# DALTON: implement method of displaying alert if checkin should fail
 
@@ -165,7 +167,7 @@ def homescreen():
 #### MAIN ######################################################################
 
 # SYNC FROM DATABASE
-func.sync_database(update_all=True)
+(init_sync_status, init_sync_success) = func.sync_database(update_all=True)
 
 # initialize the window
 root = tk.Tk()

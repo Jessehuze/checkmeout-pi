@@ -80,43 +80,46 @@ def send_request():
 
     # get request (sends data to database)
     req_str = "http://api.checkmeout.us.to/kiosk/check%s?SID=%d&UID=%d&items=[%s]"
-    response = requests.get(req_str % (KIOSK_TYPE, STORE_ID, USER_ID, ",".join(map(str, CHECKED_ITEMS))))
+    try:
+        response = requests.get(req_str % (KIOSK_TYPE, STORE_ID, USER_ID, ",".join(map(str, CHECKED_ITEMS))))
 
-    # check response (get data from database)
-    if response.status_code == 200:
-        response = response.json()
-        if response["status"] == u'success':
-            try:
-                # response differes based on checking operation
-                #   checking IN response: [... {'items_updated': []}, ...]
-                #   checking OUT response: [... {'items_saved': []}, ...]
-                if KIOSK_TYPE == "in":
-                    success_key = "items_updated"
-                else:
-                    success_key = "items_saved"
-
-                for item in response[success_key]:
-                    results["success"].append(item["item_tag"])
-                for item in response["items_failed"]:
-                    if "item_name" in item.keys():
-                        # valid tag_id but invalid check operation
-                        results["fail"].append(item["item_tag"])
+        # check response (get data from database)
+        if response.status_code == 200:
+            response = response.json()
+            if response["status"] == u'success':
+                try:
+                    # response differes based on checking operation
+                    #   checking IN response: [... {'items_updated': []}, ...]
+                    #   checking OUT response: [... {'items_saved': []}, ...]
+                    if KIOSK_TYPE == "in":
+                        success_key = "items_updated"
                     else:
-                        # invalid tag_id
-                        results["fail"].append(item["item_tag"])
-            except KeyError:
-                return ("Problem parsing: %r" % response, False)
+                        success_key = "items_saved"
 
-            # check if all items were successfully checked
-            if len(CHECKED_ITEMS) == len(results["success"]):
-                return ("All items succeeded", True)
+                    for item in response[success_key]:
+                        results["success"].append(item["item_tag"])
+                    for item in response["items_failed"]:
+                        if "item_name" in item.keys():
+                            # valid tag_id but invalid check operation
+                            results["fail"].append(item["item_tag"])
+                        else:
+                            # invalid tag_id
+                            results["fail"].append(item["item_tag"])
+                except KeyError:
+                    return ("Problem parsing: %r" % response, False)
+
+                # check if all items were successfully checked
+                if len(CHECKED_ITEMS) == len(results["success"]):
+                    return ("All items succeeded", True)
+                else:
+                    return ("Some items failed", False)
             else:
-                return ("Some items failed", False)
-        else:
-            return("ERROR: %s" % response["status"], False)
+                return("ERROR: %s" % response["status"], False)
 
-    else:
-        return ("ERROR: %d" % response.status_code, False)
+        else:
+            return ("ERROR: %d" % response.status_code, False)
+    except requests.exceptions.ConnectionError:
+         return ("ERROR: internet disconnected", False)
 
 
 def get_users_from_db():
@@ -183,10 +186,19 @@ def get_reservations_from_db(items):
 
 def sync_database(update_all=False):
     """ queries the database to update ITEMS and RESERVATIOINS dicts """
-    global ITEMS, RESERVATIONS, CHECKED_ITEMS, USERS
+    global ITEMS, RESERVATIONS, USERS
+    try:
+        if update_all:
+            ITEMS = get_items_from_db()
+            USERS = get_users_from_db()
+        RESERVATIONS = get_reservations_from_db(ITEMS)
+        clear_checked_items()
+        return ("success", True)
+    except requests.exceptions.ConnectionError:
+         return ("ERROR: internet disconnected", False)
 
-    if update_all:
-        ITEMS = get_items_from_db()
-        USERS = get_users_from_db()
-    RESERVATIONS = get_reservations_from_db(ITEMS)
+
+def clear_checked_items():
+    """ empties the CHECKED_ITEMS list """
+    global CHECKED_ITEMS
     CHECKED_ITEMS = []
