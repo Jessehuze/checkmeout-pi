@@ -139,7 +139,7 @@ def goHomefromOut(*args):
 		# place items from homescreen diplay
 		homescreen()
 	else:
-		func.clear_checked_items()
+		# func.clear_checked_items()
 		print status
 		main_canvas.delete("promptOut")
 		message = "Checkout failed!\n" + status + "\nPlease try again..."

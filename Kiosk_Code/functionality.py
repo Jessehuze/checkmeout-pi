@@ -114,12 +114,12 @@ def send_request():
                 else:
                     return ("Some items failed", False)
             else:
-                return("ERROR: %s" % response["status"], False)
+                return(str(response["status"]), False)
 
         else:
-            return ("ERROR: %d" % response.status_code, False)
+            return (str(response.status_code), False)
     except requests.exceptions.ConnectionError:
-         return ("ERROR: internet disconnected", False)
+         return ("internet disconnected", False)
 
 
 def get_users_from_db():
@@ -196,7 +196,7 @@ def sync_database(update_all=False):
         clear_checked_items()
         return ("success", True)
     except requests.exceptions.ConnectionError:
-         return ("ERROR: internet disconnected", False)
+         return ("internet disconnected", False)
 
 
 def clear_checked_items():
