@@ -2,6 +2,7 @@ import Tkinter as tk
 from PIL import ImageTk
 from sys import platform
 import functionality as func
+import time
 
 # disable certain linting warnings
 # pylint: disable=W0312,C0103,C0301,W0603
@@ -22,13 +23,17 @@ def addToList(*args):
 
 	if side_num == 0: # left side (checkout)
 		(item_name, success) = func.verify_item(value)
-		# DALTON: make label red if success is False
-		label2 = main_canvas.create_text(30, num1, font=("Work Sans", 18), tags="item_labels", text=item_name, anchor="w")
+		if success == False:
+			label2 = main_canvas.create_text(30, num1, font=("Work Sans", 18), tags="item_labels", text=item_name, anchor="w", fill="red")
+		else:
+			label2 = main_canvas.create_text(30, num1, font=("Work Sans", 18), tags="item_labels", text=item_name, anchor="w")
 
 	elif side_num == 1: # right side (checkin)
 		(item_name, success) = func.verify_item(value)
-		# DALTON: make label red if success is False
-		label2 = main_canvas.create_text(770, num1, font=("Work Sans", 18), tags="item_labels", text=item_name, anchor="e")
+		if success == False:
+			label2 = main_canvas.create_text(770, num1, font=("Work Sans", 18), tags="item_labels", text=item_name, anchor="e", fill="red")
+		else:
+			label2 = main_canvas.create_text(770, num1, font=("Work Sans", 18), tags="item_labels", text=item_name, anchor="e")
 
 	elif side_num == 2: # hidden off-screen right
 		label2 = main_canvas.create_text(900, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="w")
@@ -41,8 +46,9 @@ def addToList(*args):
 			if validID:
 				checkout()
 			else:
-				goHomefromLogin()
-				# DALTON: show error message: "Invalid User ID"
+				main_canvas.delete("loginPrompt")
+				loginFailed = main_canvas.create_text(400, 300, font=("Purisa", 27), tags="loginFailed", text="Invalid ID! Please try again...", fill="red")
+				main_canvas.after(2500, lambda: login())
 	num1 = num1 + 30
 	fileName_entry.delete(0, tk.END)
 
@@ -53,10 +59,12 @@ def login(*args):
 	""" after selecting checkout, display prompt user for user ID """
 	global side_num
 	side_num = -1
+	main_canvas.delete("loginFailed")
+	homeButton.place(x=520, y=383, width=225, height=77)
 	checkInButton.place(x=-446, y=-116)
 	checkOutButton.place(x=-446, y=-116)
 	fileName_entry.place(x=-600, y=-900, width=500, height=40)
-	loginPrompt = main_canvas.create_text(400, 320, font=("Purisa", 27), tags="loginPrompt", text="Scan your ID card to login.")
+	loginPrompt = main_canvas.create_text(400, 300, font=("Purisa", 27), tags="loginPrompt", text="Scan your ID card to login.")
 
 
 def checkout(*args):
@@ -67,6 +75,7 @@ def checkout(*args):
 	func.set_kiosk_type("out")
 
 	# hide unessissary buttons
+	homeButton.place(x=-446, y=-116)
 	checkInButton.place(x=-446, y=-116)
 	checkOutButton.place(x=-446, y=-116)
 	loginToCheckoutButton.place(x=-446, y=-116)
@@ -97,13 +106,14 @@ def checkin(*args):
 	homeButtonIn.place(x=55, y=383, width=225, height=77)
 	fileName_entry.place(x=-600, y=-900, width=500, height=40)
 	main_canvas.create_image(185, 60, image=small_logo, tags="small_logo")
-	message = "Scan your items and press\n'check out' when you're\nfinished."
+	message = "Scan your items and press\n'check in' when you're\nfinished."
 	promptIn = main_canvas.create_text(165, 210, font=("Purisa", 15), tags="promptIn", text=message)
 
 def goHomefromLogin():
 	""" transision back to homescreen, hide login diplay, place homescreen display """
 	main_canvas.delete("logo")
 	main_canvas.delete("loginPrompt")
+	main_canvas.delete("loginFailed")
 	loginToCheckoutButton.place(x=-446, y=-116)
 	homescreen()
 
@@ -113,22 +123,35 @@ def goHomefromOut(*args):
 	global num1
 	num1 = 50
 
+	main_canvas.delete("checkoutFailed")
+
 	(status, success) = func.send_request()
 	if success:
 		(sync_status, sync_success) = func.sync_database()
+			# hide items from checkout display
+		main_canvas.delete("small_logo")
+		main_canvas.delete("promptOut")
+		main_canvas.delete("item_labels")
+		main_canvas.delete("username")
+		homeButtonOut.place(x=-446, y=-116)
+		# place items from homescreen diplay
+		homescreen()
 	else:
 		func.clear_checked_items()
 		print status
+		main_canvas.delete("promptOut")
+		checkoutFailed = main_canvas.create_text(780, 260, font=("Purisa", 18), tags="checkoutFailed", text="Checkout failed!\n Please try again...", fill="red", anchor="e")
+		main_canvas.after(2500, lambda: goHomefromOut())
 		# DALTON: implement method of displaying alert if checkout should fail
 
 	# hide items from checkout display
-	main_canvas.delete("small_logo")
-	main_canvas.delete("promptOut")
-	main_canvas.delete("item_labels")
-	main_canvas.delete("username")
-	homeButtonOut.place(x=-446, y=-116)
+#	main_canvas.delete("small_logo")
+#	main_canvas.delete("promptOut")
+#	main_canvas.delete("item_labels")
+#	main_canvas.delete("username")
+#	homeButtonOut.place(x=-446, y=-116)
 	# place items from homescreen diplay
-	homescreen()
+#	homescreen()
 
 
 def goHomefromIn(*args):
@@ -136,28 +159,43 @@ def goHomefromIn(*args):
 	global num1
 	num1 = 50
 
+	main_canvas.delete("checkinFailed")
+
 	(status, success) = func.send_request()
 	if success:
 		func.sync_database()
+		# hide items from checkin display
+		main_canvas.delete("small_logo")
+		main_canvas.delete("promptIn")
+		main_canvas.delete("item_labels")
+		homeButtonIn.place(x=-446, y=-116)
+		# place items from homescreen diplay
+		homescreen()
 	else:
 		func.clear_checked_items()
 		print status
+		main_canvas.delete("promptIn")
+		checkinFailed = main_canvas.create_text(150, 260, font=("Purisa", 18), tags="checkinFailed", text="Checkin failed!\n Please try again...", fill="red")
+		main_canvas.after(2500, lambda: goHomefromIn())
 		# DALTON: implement method of displaying alert if checkin should fail
 
 	# hide items from checkin display
-	main_canvas.delete("small_logo")
-	main_canvas.delete("promptIn")
-	main_canvas.delete("item_labels")
-	homeButtonIn.place(x=-446, y=-116)
+#	main_canvas.delete("small_logo")
+#	main_canvas.delete("promptIn")
+#	main_canvas.delete("item_labels")
+#	homeButtonIn.place(x=-446, y=-116)
 	# place items from homescreen diplay
-	homescreen()
+#	homescreen()
 
 
 def homescreen():
 	""" display all elements of homescreen """
-	global side_num
+	global side_num, num1
+	num1 = 50
 	side_num = 2
 
+	main_canvas.delete("loginPrompt")
+	homeButton.place(x=-446, y=-116)
 	main_canvas.create_image(400, 125, image=main_logo, tags="logo")
 	checkOutButton.place(x=288, y=380, width=225, height=77)
 	checkInButton.place(x=288, y=280, width=225, height=77)
@@ -167,7 +205,7 @@ def homescreen():
 #### MAIN ######################################################################
 
 # SYNC FROM DATABASE
-(init_sync_status, init_sync_success) = func.sync_database(update_all=True)
+#(init_sync_status, init_sync_success) = func.sync_database(update_all=True)
 
 # initialize the window
 root = tk.Tk()
@@ -180,7 +218,7 @@ if platform == "darwin" or platform == "win32":
 	CURSOR = ''
 else:
 	# linux (pi), fullscreen and hide cursor
-	root.attributes("-fullscreen", True)
+	#root.attributes("-fullscreen", True)
 	CURSOR = 'none'
 
 # initialize the frame, main canvas
@@ -236,6 +274,11 @@ homeButtonOut.configure(image=homeImageOut, bg='white')
 loginToCheckoutButton = tk.Button(root, text="Check Out", command=checkout, highlightthickness=0, bd=0, activebackground='white', cursor=CURSOR)
 checkOutImgFromLogin = ImageTk.PhotoImage(file='KioskCheckOut.png')
 loginToCheckoutButton.configure(image=checkOutImgFromLogin, bg='white')
+
+# Home button from Login
+homeButton = tk.Button(root, text="Home", command=homescreen, highlightthickness=0, bd=0, activebackground='white', cursor=CURSOR)
+homeImage = ImageTk.PhotoImage(file='KioskHome.png')
+homeButton.configure(image=homeImage, bg='white')
 
 fileName_entry.focus()
 # root.focus_set()
