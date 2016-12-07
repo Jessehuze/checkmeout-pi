@@ -42,13 +42,13 @@ def addToList(*args):
 		label2 = main_canvas.create_text(900, num1, font=("Work Sans", 18), tags="item_labels", text=value, anchor="w")
 
 		if value:
-			(name, validID) = func.verify_user(value)
-			if validID:
+			(name, success) = func.verify_user(value)
+			if success:
 				checkout()
 			else:
 				main_canvas.delete("loginPrompt")
 				loginFailed = main_canvas.create_text(400, 300, font=("Purisa", 27), tags="loginFailed", text="Invalid ID! Please try again...", fill="red")
-				main_canvas.after(2500, lambda: login())
+				# main_canvas.after(2500, lambda: login())
 	num1 = num1 + 30
 	fileName_entry.delete(0, tk.END)
 
@@ -82,6 +82,7 @@ def checkout(*args):
 	# delete unessissary logos
 	main_canvas.delete("logo")
 	main_canvas.delete("loginPrompt")
+	main_canvas.delete("loginFailed")
 	# place complete checkout button
 	homeButtonOut.place(x=520, y=383, width=225, height=77)
 	# place text/logos
@@ -124,6 +125,7 @@ def goHomefromOut(*args):
 	num1 = 50
 
 	main_canvas.delete("checkoutFailed")
+	main_canvas.delete("loginFailed")
 
 	(status, success) = func.send_request()
 	if success:
@@ -140,18 +142,9 @@ def goHomefromOut(*args):
 		func.clear_checked_items()
 		print status
 		main_canvas.delete("promptOut")
-		checkoutFailed = main_canvas.create_text(780, 260, font=("Purisa", 18), tags="checkoutFailed", text="Checkout failed!\n Please try again...", fill="red", anchor="e")
-		main_canvas.after(2500, lambda: goHomefromOut())
-		# DALTON: implement method of displaying alert if checkout should fail
-
-	# hide items from checkout display
-#	main_canvas.delete("small_logo")
-#	main_canvas.delete("promptOut")
-#	main_canvas.delete("item_labels")
-#	main_canvas.delete("username")
-#	homeButtonOut.place(x=-446, y=-116)
-	# place items from homescreen diplay
-#	homescreen()
+		message = "Checkout failed!\n" + status + "\nPlease try again..."
+		checkoutFailed = main_canvas.create_text(780, 260, font=("Purisa", 18), tags="checkoutFailed", text=message, fill="red", anchor="e")
+		# main_canvas.after(2500, lambda: goHomefromOut())
 
 
 def goHomefromIn(*args):
@@ -172,20 +165,12 @@ def goHomefromIn(*args):
 		# place items from homescreen diplay
 		homescreen()
 	else:
-		func.clear_checked_items()
+		# func.clear_checked_items()
 		print status
 		main_canvas.delete("promptIn")
-		checkinFailed = main_canvas.create_text(150, 260, font=("Purisa", 18), tags="checkinFailed", text="Checkin failed!\n Please try again...", fill="red")
-		main_canvas.after(2500, lambda: goHomefromIn())
-		# DALTON: implement method of displaying alert if checkin should fail
-
-	# hide items from checkin display
-#	main_canvas.delete("small_logo")
-#	main_canvas.delete("promptIn")
-#	main_canvas.delete("item_labels")
-#	homeButtonIn.place(x=-446, y=-116)
-	# place items from homescreen diplay
-#	homescreen()
+		message = "Checkin failed!\n" + status + "\nPlease try again..."
+		checkinFailed = main_canvas.create_text(150, 260, font=("Purisa", 18), tags="checkinFailed", text=message, fill="red")
+		# main_canvas.after(2500, lambda: goHomefromIn())
 
 
 def homescreen():
@@ -195,6 +180,7 @@ def homescreen():
 	side_num = 2
 
 	main_canvas.delete("loginPrompt")
+	main_canvas.delete("loginFailed")
 	homeButton.place(x=-446, y=-116)
 	main_canvas.create_image(400, 125, image=main_logo, tags="logo")
 	checkOutButton.place(x=288, y=380, width=225, height=77)
@@ -205,7 +191,7 @@ def homescreen():
 #### MAIN ######################################################################
 
 # SYNC FROM DATABASE
-#(init_sync_status, init_sync_success) = func.sync_database(update_all=True)
+(init_sync_status, init_sync_success) = func.sync_database(update_all=True)
 
 # initialize the window
 root = tk.Tk()
@@ -218,7 +204,7 @@ if platform == "darwin" or platform == "win32":
 	CURSOR = ''
 else:
 	# linux (pi), fullscreen and hide cursor
-	#root.attributes("-fullscreen", True)
+	root.attributes("-fullscreen", True)
 	CURSOR = 'none'
 
 # initialize the frame, main canvas

@@ -176,7 +176,8 @@ def get_reservations_from_db(items):
                     if items[tag_id]["id"] == reservation["item_id"]:
                         break
                 else:
-                    raise ValueError("item_id: %d did not match any item_id in items" % reservation["item_id"])
+                    continue
+                    # raise ValueError("item_id: %d did not match any item_id in items" % reservation["item_id"])
                 reservation_dict[tag_id] = reservation
     else:
         raise ValueError("Error getting reservations from DB")
